@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlueChat Web</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
+    <style>
+        /* --- THEME --- */
+        :root {
+            --bg-app: #0F0F0F;
+            --bg-sidebar: #000000;
+            --surface: #1C1C1E;
+            --input-bg: #2C2C2E;
+            --primary: #0070D1;
+            --bubble-me: #0A84FF;
+            --bubble-them: #2C2C2E;
+            --text-main: #FFFFFF;
+            --text-sec: #8E8E93;
+            --danger: #FF453A;
+            --online: #00E676;
+            --tick-read: #4FC3F7;
+        }
+
+        * { box-sizing: border-box; }
+        body { background-color: var(--bg-app); color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; overflow: hidden; height: 100vh; font-size: 15px; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+        #app { display: flex; width: 100%; height: 100%; }
+
+        /* --- LOGIN --- */
+        .auth-wrapper { width: 100%; display: flex; align-items: center; justify-content: center; background: #000; }
+        .auth-logo { width: 100px; height: 100px; border-radius: 20px; object-fit: cover; margin-bottom: 20px; }
+        .auth-form { width: 340px; text-align: center; }
+        .auth-title { font-size: 36px; font-weight: 700; color: var(--primary); margin-bottom: 5px; }
+        .auth-sub { color: var(--text-sec); margin-bottom: 40px; }
+        .app-input { width: 100%; background: var(--input-bg); border: 1px solid transparent; padding: 14px; border-radius: 12px; color: white; outline: none; margin-bottom: 15px; transition: 0.2s; }
+        .app-input:focus { border-color: var(--primary); }
+        .app-btn { width: 100%; background: var(--primary); color: white; padding: 14px; border-radius: 50px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        .app-btn:hover { opacity: 0.9; }
+
+        /* --- SIDEBAR --- */
+        .sidebar { width: 380px; background: var(--bg-sidebar); border-right: 1px solid #222; display: flex; flex-direction: column; position: relative; }
+        .sidebar-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; height: 70px; }
+        
+        .logo-area { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; color: white; }
+        .mini-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; }
+
+        .icon-btn { background: var(--surface); color: white; width: 40px; height: 40px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; margin-left: 8px; flex-shrink: 0; }
+        .icon-btn:hover { background: #333; }
+
+        .search-container { padding: 0 15px 10px 15px; }
+        .search-bar { background: var(--input-bg); border-radius: 12px; padding: 10px 15px; display: flex; align-items: center; color: var(--text-sec); }
+        .search-bar input { background: transparent; border: none; color: white; margin-left: 10px; width: 100%; outline: none; font-size: 15px; }
+
+        .chat-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .chat-row { display: flex; align-items: center; padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 2px; }
+        .chat-row:hover { background: #111; }
+        .chat-row.active { background: #1C1C1E; }
+        
+        .avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; margin-right: 15px; position: relative; color: white; flex-shrink: 0; }
+        .avatar.group { background: #5E35B1; }
+        .online-dot { width: 14px; height: 14px; background: var(--online); border: 2px solid var(--bg-sidebar); border-radius: 50%; position: absolute; bottom: 0; right: 0; }
+
+        .fab { position: absolute; bottom: 20px; right: 20px; width: 56px; height: 56px; background: var(--primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(0,112,209,0.4); cursor: pointer; border: none; transition: 0.2s; z-index: 10; }
+        .fab:hover { transform: scale(1.05); }
+
+        /* --- CHAT AREA --- */
+        .chat-area { flex: 1; background: var(--bg-app); display: flex; flex-direction: column; }
+        .chat-header { height: 70px; padding: 0 20px; background: var(--bg-sidebar); border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; }
+        .in-chat-search { background: var(--input-bg); border: none; color: white; padding: 8px 12px; border-radius: 8px; margin-right: 10px; outline: none; width: 200px; }
+
+        .msg-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+        
+        /* DATE PILL */
+        .date-divider { 
+            align-self: center; 
+            margin: 20px auto; 
+            background: #222; 
+            padding: 6px 14px; 
+            border-radius: 50px;
+            font-size: 11px; 
+            color: #BBB; 
+            font-weight: 500;
+            width: fit-content;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* MESSAGE ROW */
+        .msg-wrap { display: flex; width: 100%; margin-bottom: 4px; align-items: flex-end; }
+        .msg-wrap.me { flex-direction: row-reverse; } 
+        .msg-wrap.them { flex-direction: row; }
+
+        /* ACTIONS MENU */
+        .msg-actions { 
+            opacity: 0; 
+            transition: 0.2s; 
+            display: flex; 
+            gap: 5px; 
+            margin: 0 10px; 
+            align-self: center;
+        }
+        .msg-wrap:hover .msg-actions { opacity: 1; }
+        
+        .action-btn { 
+            width: 28px; height: 28px; 
+            border-radius: 50%; 
+            background: #333; 
+            color: #FFF; 
+            border: none; 
+            display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; font-size: 14px;
+        }
+        .action-btn:hover { background: var(--primary); }
+
+        /* BUBBLE */
+        .bubble-group { display: flex; flex-direction: column; max-width: 65%; }
+        .bubble { padding: 8px 14px; border-radius: 18px; font-size: 15px; line-height: 1.5; position: relative; width: 100%; }
+        .me .bubble { background: var(--bubble-me); color: white; border-bottom-right-radius: 4px; }
+        .them .bubble { background: var(--bubble-them); color: white; border-bottom-left-radius: 4px; }
+        
+        /* REPLY PREVIEW INSIDE BUBBLE */
+        .reply-context {
+            background: rgba(0,0,0,0.2);
+            border-left: 3px solid rgba(255,255,255,0.5);
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .reply-name { font-weight: bold; color: var(--tick-read); font-size: 11px; margin-bottom: 2px; }
+
+        /* REACTION BADGE */
+        .reaction-badge {
+            position: absolute;
+            bottom: -10px;
+            background: var(--surface);
+            border: 2px solid var(--bg-app);
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 12px;
+            z-index: 2;
+        }
+        .me .reaction-badge { left: -5px; }
+        .them .reaction-badge { right: -5px; }
+
+        .msg-time { font-size: 10px; opacity: 0.7; display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 2px; float: right; margin-left: 8px; }
+        .tick-icon { font-size: 15px; } 
+        .tick-read { color: var(--tick-read); }
+        .tick-sent { color: rgba(255,255,255,0.6); }
+
+        /* INPUT AREA */
+        .input-wrapper { background: var(--bg-sidebar); padding: 10px 15px; }
+        
+        .reply-bar { 
+            background: #1F1F1F; 
+            padding: 8px 15px; 
+            border-radius: 12px 12px 0 0; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            border-left: 4px solid var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .input-area { display: flex; align-items: flex-end; gap: 10px; }
+        .msg-input { flex: 1; background: var(--input-bg); border-radius: 24px; padding: 12px 20px; border: none; color: white; outline: none; resize: none; min-height: 48px; max-height: 120px; font-family: inherit; }
+        .send-btn { width: 48px; height: 48px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; color: white; flex-shrink: 0; }
+
+        /* --- MODALS --- */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal-card { background: #121212; width: 400px; border-radius: 16px; border: 1px solid #333; overflow: hidden; display: flex; flex-direction: column; max-height: 80vh; }
+        .modal-header { padding: 15px; background: #1E1E1E; font-weight: bold; display: flex; align-items: center; gap: 15px; font-size: 18px; }
+        .modal-content { padding: 20px; overflow-y: auto; }
+
+        .contact-row { display: flex; align-items: center; padding: 12px; border-radius: 12px; cursor: pointer; }
+        .contact-row:hover { background: #222; }
+        .contact-row.selected { background: rgba(0, 112, 209, 0.2); }
+        .check-icon { margin-left: auto; color: var(--primary); }
+
+        .btn-delete { background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid var(--danger); margin-top: 20px; width: 100%; padding: 12px; border-radius: 50px; font-weight: bold; cursor: pointer; }
+        .btn-logout { background: transparent; color: white; border: 1px solid #333; margin-top: 10px; width: 100%; padding: 12px; border-radius: 50px; cursor: pointer; }
+        
+        .setting-row { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #222; cursor: pointer; justify-content: space-between; }
+        .setting-row:hover { background: #1A1A1A; }
+
+        /* TOGGLE SWITCH */
+        .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    
+    <div v-if="!user" class="auth-wrapper">
+        <div class="auth-form">
+            <img src="bluechat.jpg" class="auth-logo" @error="hideLogo">
+            <div class="auth-title">BlueChat</div>
+            <div class="auth-sub">{{ isLogin ? 'Welcome Back' : 'Join the community' }}</div>
+            <input v-if="!isLogin" v-model="authName" class="app-input" placeholder="Display Name">
+            <input v-model="authEmail" class="app-input" placeholder="Email">
+            <input v-model="authPassword" class="app-input" type="password" placeholder="Password">
+            <button class="app-btn" @click="authenticate">{{ isLogin ? 'Log In' : 'Sign Up' }}</button>
+            <div style="margin-top: 20px; color: var(--primary); cursor: pointer;" @click="isLogin = !isLogin">
+                {{ isLogin ? "Don't have an account? Sign Up" : "Already have an account? Log In" }}
+            </div>
+        </div>
+    </div>
+
+    <div v-else style="display: flex; width: 100%;">
+        
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-area">
+                    <img src="bluechat.jpg" class="mini-logo" @error="hideLogo">
+                    BlueChat
+                </div>
+                <div style="display: flex;">
+                    <button class="icon-btn" @click="openProfile" title="Profile"><span class="material-icons-round">person</span></button>
+                    <button class="icon-btn" @click="showSettings = true" title="Settings"><span class="material-icons-round">settings</span></button>
+                </div>
+            </div>
+
+            <div class="search-container">
+                <div class="search-bar">
+                    <span class="material-icons-round">search</span>
+                    <input v-model="chatSearch" placeholder="Search...">
+                </div>
+            </div>
+
+            <div class="chat-list">
+                <div v-for="chat in sortedChats" :key="chat.id" class="chat-row" :class="{ active: activeChat?.id === chat.id }" @click="openChat(chat)">
+                    <div class="avatar" :class="{ group: chat.type === 'group' }">
+                        {{ chat.name.charAt(0).toUpperCase() }}
+                        <div v-if="isOnline(chat)" class="online-dot"></div>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 16px;">{{ chat.name }}</div>
+                        <div style="font-size: 13px; color: var(--text-sec); margin-top: 2px;">{{ chat.type === 'group' ? 'Tap to open group' : 'Tap to chat' }}</div>
+                    </div>
+                    <span v-if="isPinned(chat.id)" class="material-icons-round" style="font-size: 18px; color: var(--primary);">push_pin</span>
+                </div>
+            </div>
+
+            <button class="fab" @click="openNewChatModal"><span class="material-icons-round">edit</span></button>
+        </div>
+
+        <div class="chat-area">
+            <div v-if="activeChat" style="display: flex; flex-direction: column; height: 100%;">
+                <div class="chat-header">
+                    <div style="display: flex; align-items: center; cursor: pointer;" @click="showInfo = true">
+                        <div class="avatar" style="width: 40px; height: 40px; font-size: 16px; margin-right: 12px;" :class="{ group: activeChat.type === 'group' }">
+                            {{ activeChat.name.charAt(0) }}
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 16px;">{{ activeChat.name }}</div>
+                            <div style="font-size: 12px; display: flex; align-items: center; gap: 5px;" 
+                                 :style="{ color: isOnline(activeChat) ? 'var(--online)' : 'var(--text-sec)' }">
+                                <div v-if="isOnline(activeChat)" style="width: 8px; height: 8px; background: var(--online); border-radius: 50%;"></div>
+                                {{ getStatusText(activeChat) }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input v-if="showSearch" v-model="msgSearch" class="in-chat-search" placeholder="Find in chat...">
+                        <button class="icon-btn" @click="showSearch = !showSearch"><span class="material-icons-round">{{ showSearch ? 'close' : 'search' }}</span></button>
+                        <button class="icon-btn" @click="showMenu = !showMenu"><span class="material-icons-round">more_vert</span></button>
+                    </div>
+
+                    <div v-if="showMenu" style="position: absolute; top: 60px; right: 20px; background: #252525; border-radius: 12px; padding: 5px; width: 160px; z-index: 50;">
+                        <div class="contact-row" @click="togglePin(activeChat.id); showMenu=false">{{ isPinned(activeChat.id) ? 'Unpin' : 'Pin Chat' }}</div>
+                        <div class="contact-row" @click="clearChat; showMenu=false" style="color: var(--danger);">Clear Chat</div>
+                        <div v-if="activeChat.type==='private'" class="contact-row" @click="toggleBlock; showMenu=false" style="color: var(--danger);">{{ isBlocked ? 'Unblock' : 'Block User' }}</div>
+                    </div>
+                </div>
+
+                <div class="msg-container" ref="msgList">
+                    <div v-for="(group, idx) in filteredMessages" :key="idx">
+                        <div class="date-divider">{{ group.date }}</div>
+                        
+                        <div v-for="msg in group.msgs" :key="msg.id" class="msg-wrap" :class="msg.senderId === user.uid ? 'me' : 'them'">
+                            
+                            <div class="msg-actions" v-if="!isBlocked">
+                                <template v-if="msg.senderId !== user.uid">
+                                    <button class="action-btn" @click="react(msg.id, '❤️')">❤️</button>
+                                    <button class="action-btn" @click="react(msg.id, '😂')">😂</button>
+                                    <button class="action-btn" @click="setReply(msg)" title="Reply"><span class="material-icons-round" style="font-size:14px">reply</span></button>
+                                    <button class="action-btn" @click="copyText(msg.text)" title="Copy"><span class="material-icons-round" style="font-size:14px">content_copy</span></button>
+                                </template>
+                                <template v-else>
+                                    <button class="action-btn" @click="deleteMsg(msg.id)" style="color:var(--danger)" title="Delete"><span class="material-icons-round" style="font-size:14px">delete</span></button>
+                                </template>
+                            </div>
+
+                            <div class="bubble-group">
+                                <div class="bubble">
+                                    <div v-if="msg.replyToId" class="reply-context">
+                                        <div class="reply-name">{{ msg.replyToName }}</div>
+                                        <div style="opacity:0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ msg.replyToText }}</div>
+                                    </div>
+
+                                    <div style="white-space: pre-wrap;">{{ msg.text }}</div>
+                                    <div class="msg-time">
+                                        {{ formatTime(msg.timestamp) }}
+                                        <span v-if="msg.senderId === user.uid" class="material-icons-round tick-icon" 
+                                              :class="msg.read ? 'tick-read' : 'tick-sent'" style="margin-left: 4px;">
+                                            {{ msg.read ? 'done_all' : 'done' }}
+                                        </span>
+                                    </div>
+                                    <div v-if="msg.reaction" class="reaction-badge">{{ msg.reaction }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-wrapper">
+                    <div v-if="isBlocked" style="width: 100%; text-align: center; color: var(--danger); font-weight: bold;">You blocked this user.</div>
+                    <div v-else>
+                        <div v-if="replyingTo" class="reply-bar">
+                            <div style="color: #AAA; font-size: 13px;">Replying to <strong style="color:var(--primary)">{{ replyingTo.senderName }}</strong></div>
+                            <span class="material-icons-round" style="cursor:pointer;" @click="replyingTo = null">close</span>
+                        </div>
+
+                        <div class="input-area">
+                            <textarea v-model="newMessage" class="msg-input" placeholder="Message..." @keyup.enter.exact="sendMessage"></textarea>
+                            <button class="send-btn" @click="sendMessage"><span class="material-icons-round">send</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div v-else style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+                <h2 style="color: var(--text-sec);">Select a chat to start messaging</h2>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="showNewChat" class="modal-overlay" @click.self="showNewChat = false">
+        <div class="modal-card">
+            <div class="modal-header"><span class="material-icons-round" @click="showNewChat = false" style="cursor: pointer;">arrow_back</span> New Message</div>
+            <div class="modal-content">
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <button class="app-btn" :style="{background: !isGroupMode ? 'var(--primary)' : '#333', flex:1}" @click="isGroupMode = false">Contact</button>
+                    <button class="app-btn" :style="{background: isGroupMode ? 'var(--primary)' : '#333', flex:1}" @click="isGroupMode = true">Group</button>
+                </div>
+                
+                <input v-if="isGroupMode" v-model="newGroupName" class="app-input" placeholder="Group Name">
+                <div style="font-weight: bold; margin: 10px 0; color: var(--primary);">Select Contacts</div>
+                
+                <div v-if="loadingContacts" style="text-align: center; color: #888; padding: 20px;">Loading contacts...</div>
+                <div v-else-if="allUsers.length === 0" style="text-align: center; color: #888; padding: 20px;">No other users found.</div>
+                
+                <div style="max-height: 250px; overflow-y: auto;">
+                    <div v-for="u in allUsers" :key="u.uid" class="contact-row" @click="toggleSelect(u.uid)" :class="{ selected: selectedUsers.includes(u.uid) }">
+                        <div class="avatar" style="width:35px; height:35px; font-size:14px; margin-right: 10px;">{{ u.name[0] }}</div>
+                        <div style="flex:1;">{{ u.name }}</div>
+                        <span v-if="selectedUsers.includes(u.uid)" class="material-icons-round check-icon">check_circle</span>
+                    </div>
+                </div>
+
+                <button class="app-btn" @click="createChat" :disabled="selectedUsers.length===0" style="margin-top: 20px;">{{ isGroupMode ? 'Create Group' : 'Start Chat' }}</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
+        <div class="modal-card">
+            <div class="modal-header"><span class="material-icons-round" @click="showSettings = false" style="cursor: pointer;">arrow_back</span> Settings</div>
+            <div class="modal-content">
+                <div style="color: var(--primary); font-weight: bold; margin-bottom: 10px;">Preferences</div>
+                
+                <div class="setting-row">
+                    <div>Read Receipts</div>
+                    <label class="switch">
+                        <input type="checkbox" v-model="settings.readReceipts" @change="saveSettings">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <div>Notifications</div>
+                    <label class="switch">
+                        <input type="checkbox" v-model="settings.notifications" @change="saveSettings">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div style="color: var(--primary); font-weight: bold; margin: 20px 0 10px 0;">Help</div>
+                <div class="setting-row" @click="openLink('https://arnav-dugad.github.io/BlueChat-Help-Center/')"><div>Help Center</div><span class="material-icons-round" style="margin-left: auto; color: #555;">chevron_right</span></div>
+                <div class="setting-row" @click="openLink('https://arnav-dugad.github.io/BlueChat-Terms-Policy/#data-usage')"><div>Terms & Policy</div><span class="material-icons-round" style="margin-left: auto; color: #555;">chevron_right</span></div>
+                <div style="text-align: center; font-size: 12px; color: #555; margin-top: 30px;">BlueChat v1.2.0<br>Arnav Dugad © 2026</div>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="showProfile" class="modal-overlay" @click.self="showProfile = false">
+        <div class="modal-card">
+            <div class="modal-header"><span class="material-icons-round" @click="showProfile = false" style="cursor: pointer;">arrow_back</span> My Profile</div>
+            <div class="modal-content" style="text-align: center;">
+                <div class="avatar" style="width: 100px; height: 100px; font-size: 40px; margin: 10px auto 20px auto;">{{ userProfile.name?.[0] || 'A' }}</div>
+                <input v-model="editName" class="app-input" placeholder="Display Name">
+                <input v-model="editStatus" class="app-input" placeholder="Status">
+                <div style="text-align: left; font-size: 12px; color: #555; margin-bottom: 25px;">Email: {{ user.email }}</div>
+                <button class="app-btn" @click="saveProfile">Save Changes</button>
+                <button class="btn-delete" @click="deleteAccount">Delete Account</button>
+                <button class="btn-logout" @click="logout">Log Out</button>
+            </div>
+        </div>
+    </div>
+    
+    <div v-if="showInfo" class="modal-overlay" @click.self="showInfo = false">
+        <div class="modal-card">
+            <div class="modal-header">Contact Info</div>
+            <div class="modal-content">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div class="avatar" style="width: 80px; height: 80px; font-size: 30px; margin: 0 auto 10px auto;" :class="{ group: activeChat.type === 'group' }">{{ activeChat.name.charAt(0) }}</div>
+                    <h2>{{ activeChat.name }}</h2>
+                    <p style="color: var(--text-sec);">{{ activeChat.type === 'group' ? 'Group Chat' : 'Private Contact' }}</p>
+                    <p v-if="activeChat.type === 'private' && chatEmail" style="color: #666; font-size: 13px; margin-top: 5px;">Email: {{ chatEmail }}</p>
+                </div>
+                <button class="app-btn" @click="showInfo = false">Close</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, where, onSnapshot, orderBy, doc, setDoc, updateDoc, deleteDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyC_govQDm3FuHYdj-oANSI5ooZhRtk-abk",
+        authDomain: "bluechat-db.firebaseapp.com",
+        projectId: "bluechat-db",
+        storageBucket: "bluechat-db.firebasestorage.app",
+        messagingSenderId: "237047457244",
+        appId: "1:237047457244:web:f0addb5d82ff3c3fe4db19",
+        measurementId: "G-RBE4BE8PNY"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
+    createApp({
+        setup() {
+            const user = ref(null);
+            const userProfile = ref({});
+            const settings = ref({ notifications: true, readReceipts: true });
+            const allUsers = ref([]);
+            const loadingContacts = ref(false);
+            
+            const isLogin = ref(true);
+            const authName = ref("");
+            const authEmail = ref("");
+            const authPassword = ref("");
+
+            const chats = ref([]);
+            const activeChat = ref(null);
+            const messages = ref([]);
+            const newMessage = ref("");
+            const chatSearch = ref("");
+            const msgSearch = ref("");
+            const otherUserPresence = ref({});
+            const chatEmail = ref("");
+            const replyingTo = ref(null);
+
+            const showSettings = ref(false), showProfile = ref(false), showNewChat = ref(false), showInfo = ref(false), showMenu = ref(false), showSearch = ref(false);
+            const isGroupMode = ref(false), newGroupName = ref(""), selectedUsers = ref([]);
+            const editName = ref(""), editStatus = ref("");
+
+            onMounted(() => {
+                onAuthStateChanged(auth, (u) => {
+                    user.value = u;
+                    if (u) {
+                        setOnline(true);
+                        loadProfile(u.uid);
+                        loadChats(u.uid);
+                    }
+                });
+                window.addEventListener("beforeunload", () => setOnline(false));
+            });
+
+            const setOnline = (status) => {
+                if(auth.currentUser) updateDoc(doc(db, "users", auth.currentUser.uid), { isOnline: status, lastSeen: Date.now() });
+            };
+
+            const loadProfile = (uid) => {
+                onSnapshot(doc(db, "users", uid), (d) => {
+                    if(d.exists()) {
+                        userProfile.value = d.data();
+                        editName.value = d.data().name;
+                        editStatus.value = d.data().status;
+                        // Load Settings (Default to true if missing)
+                        settings.value.readReceipts = d.data().readReceipts ?? true;
+                        settings.value.notifications = d.data().notifications ?? true;
+                    }
+                });
+            };
+
+            const saveSettings = () => {
+                updateDoc(doc(db, "users", user.value.uid), { 
+                    readReceipts: settings.value.readReceipts,
+                    notifications: settings.value.notifications
+                });
+            };
+
+            const openNewChatModal = async () => {
+                showNewChat.value = true;
+                loadingContacts.value = true;
+                selectedUsers.value = [];
+                isGroupMode.value = false;
+                const q = query(collection(db, "users"));
+                const snap = await getDocs(q);
+                allUsers.value = snap.docs.map(d => d.data()).filter(u => u.uid !== user.value.uid);
+                loadingContacts.value = false;
+            };
+
+            const loadChats = (uid) => {
+                const q = query(collection(db, "chats"), where("participants", "array-contains", uid));
+                onSnapshot(q, (snap) => {
+                    chats.value = snap.docs.map(d => {
+                        const data = d.data();
+                        let name = data.name;
+                        if(data.type !== 'group' && data.participantNames) {
+                            for(const [id, pname] of Object.entries(data.participantNames)) {
+                                if(id !== uid) name = pname;
+                            }
+                        }
+                        return { id: d.id, name, ...data };
+                    });
+                });
+            };
+
+            const openChat = async (chat) => {
+                activeChat.value = chat;
+                newMessage.value = "";
+                showMenu.value = false;
+                chatEmail.value = "";
+                replyingTo.value = null;
+                
+                const q = query(collection(db, "chats", chat.id, "messages"), orderBy("timestamp", "desc"));
+                onSnapshot(q, (snap) => {
+                    messages.value = snap.docs.map(d => {
+                        const m = d.data();
+                        // Mark read if I am recipient AND I have read receipts enabled
+                        if(m.senderId !== user.value.uid && !m.read && settings.value.readReceipts) {
+                            updateDoc(d.ref, { read: true });
+                        }
+                        return { id: d.id, ...m };
+                    });
+                    nextTick(() => {
+                        const c = document.querySelector('.msg-container');
+                        if(c) c.scrollTop = c.scrollHeight;
+                    });
+                });
+
+                if(chat.type === 'private') {
+                    const other = chat.participants.find(p => p !== user.value.uid);
+                    const userDoc = await getDoc(doc(db, "users", other));
+                    if(userDoc.exists()) {
+                        chatEmail.value = userDoc.data().email;
+                        otherUserPresence.value[other] = userDoc.data();
+                    }
+                    onSnapshot(doc(db, "users", other), (d) => {
+                        if(d.exists()) otherUserPresence.value[other] = d.data();
+                    });
+                }
+            };
+
+            const sendMessage = async () => {
+                if(!newMessage.value.trim()) return;
+                await addDoc(collection(db, "chats", activeChat.value.id, "messages"), {
+                    text: newMessage.value,
+                    senderId: user.value.uid,
+                    timestamp: Date.now(),
+                    read: false, reaction: "",
+                    replyToId: replyingTo.value?.id || "",
+                    replyToName: replyingTo.value?.senderName || "",
+                    replyToText: replyingTo.value?.text || ""
+                });
+                newMessage.value = "";
+                replyingTo.value = null;
+            };
+
+            const react = (msgId, emoji) => updateDoc(doc(db, "chats", activeChat.value.id, "messages", msgId), { reaction: emoji });
+            const deleteMsg = (msgId) => deleteDoc(doc(db, "chats", activeChat.value.id, "messages", msgId));
+            const copyText = (text) => navigator.clipboard.writeText(text).then(() => alert("Copied!"));
+            const setReply = (msg) => {
+                const name = activeChat.value.participantNames[msg.senderId] || "User";
+                replyingTo.value = { id: msg.id, text: msg.text, senderName: name };
+                document.querySelector('.msg-input').focus();
+            };
+
+            const authenticate = async () => {
+                try {
+                    if (isLogin.value) await signInWithEmailAndPassword(auth, authEmail.value, authPassword.value);
+                    else {
+                        const res = await createUserWithEmailAndPassword(auth, authEmail.value, authPassword.value);
+                        await setDoc(doc(db, "users", res.user.uid), {
+                            uid: res.user.uid, name: authName.value, email: authEmail.value,
+                            status: "Available", isOnline: true, lastSeen: Date.now(),
+                            pinnedChatIds: [], blockedUsers: [], readReceipts: true
+                        });
+                    }
+                } catch (e) { alert(e.message); }
+            };
+
+            const logout = () => { setOnline(false); signOut(auth); };
+            const hideLogo = (e) => { e.target.style.display = 'none'; };
+            const openProfile = () => { showProfile.value = true; };
+            const openLink = (url) => window.open(url, '_blank');
+            const formatTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const filteredMessages = computed(() => {
+                let list = messages.value;
+                if(msgSearch.value) list = list.filter(m => m.text.toLowerCase().includes(msgSearch.value.toLowerCase()));
+                
+                const reversed = [...list].reverse();
+                const groups = [];
+                let lastDate = "";
+                reversed.forEach(m => {
+                    const d = new Date(m.timestamp);
+                    const now = new Date();
+                    let dateStr = d.toLocaleDateString();
+                    if(d.toDateString() === now.toDateString()) dateStr = "Today";
+                    
+                    if(dateStr !== lastDate) {
+                        groups.push({ date: dateStr, msgs: [m] });
+                        lastDate = dateStr;
+                    } else {
+                        groups[groups.length - 1].msgs.push(m);
+                    }
+                });
+                return groups;
+            });
+
+            const sortedChats = computed(() => {
+                let list = chats.value.filter(c => c.name.toLowerCase().includes(chatSearch.value.toLowerCase()));
+                const pinned = userProfile.value.pinnedChatIds || [];
+                return list.sort((a, b) => {
+                    const ap = pinned.includes(a.id), bp = pinned.includes(b.id);
+                    return (ap === bp) ? 0 : ap ? -1 : 1;
+                });
+            });
+
+            const toggleSelect = (uid) => {
+                if(selectedUsers.value.includes(uid)) selectedUsers.value = selectedUsers.value.filter(i => i!==uid);
+                else {
+                    if(!isGroupMode.value) selectedUsers.value = [uid];
+                    else selectedUsers.value.push(uid);
+                }
+            };
+
+            const createChat = async () => {
+                const parts = [user.value.uid, ...selectedUsers.value];
+                const names = { [user.value.uid]: userProfile.value.name };
+                selectedUsers.value.forEach(uid => {
+                    const u = allUsers.value.find(user => user.uid === uid);
+                    if(u) names[uid] = u.name;
+                });
+
+                const data = {
+                    participants: parts, participantNames: names,
+                    type: isGroupMode.value ? 'group' : 'private',
+                };
+                if(isGroupMode.value) data.name = newGroupName.value;
+                await addDoc(collection(db, "chats"), data);
+                showNewChat.value = false;
+            };
+
+            const saveProfile = () => {
+                updateDoc(doc(db, "users", user.value.uid), { name: editName.value, status: editStatus.value });
+                showProfile.value = false;
+            };
+
+            const deleteAccount = async () => {
+                if(confirm("Delete Account? This cannot be undone.")) {
+                    const u = auth.currentUser;
+                    await deleteDoc(doc(db, "users", u.uid));
+                    await deleteUser(u);
+                }
+            };
+
+            const isPinned = (id) => (userProfile.value.pinnedChatIds || []).includes(id);
+            const togglePin = (id) => {
+                let list = userProfile.value.pinnedChatIds || [];
+                if(list.includes(id)) list = list.filter(x => x!==id); else list.push(id);
+                updateDoc(doc(db, "users", user.value.uid), { pinnedChatIds: list });
+            };
+            const isBlocked = computed(() => {
+                if(!activeChat.value || activeChat.value.type!=='private') return false;
+                const other = activeChat.value.participants.find(p => p !== user.value.uid);
+                return (userProfile.value.blockedUsers || []).includes(other);
+            });
+            const toggleBlock = () => {
+                const other = activeChat.value.participants.find(p => p !== user.value.uid);
+                let list = userProfile.value.blockedUsers || [];
+                if(list.includes(other)) list = list.filter(x => x!==other); else list.push(other);
+                updateDoc(doc(db, "users", user.value.uid), { blockedUsers: list });
+            };
+            const clearChat = async () => {
+                if(confirm("Clear chat?")) {
+                    const q = query(collection(db, "chats", activeChat.value.id, "messages"));
+                    const s = await getDocs(q);
+                    s.forEach(d => deleteDoc(d.ref));
+                }
+            };
+            const getStatusText = (chat) => {
+                if(chat.type === 'group') return chat.participants.length + " members";
+                const other = chat.participants.find(p => p!==user.value.uid);
+                const p = otherUserPresence.value[other];
+                if(p?.isOnline) return "Online";
+                if(p?.lastSeen) {
+                    const min = Math.floor((Date.now() - p.lastSeen)/60000);
+                    if(min < 60) return `Last seen ${min}m ago`;
+                    return "Last seen recently";
+                }
+                return "Offline";
+            };
+            const isOnline = (chat) => {
+                const other = chat.participants.find(p => p!==user.value.uid);
+                return otherUserPresence.value[other]?.isOnline;
+            };
+
+            return {
+                user, isLogin, authName, authEmail, authPassword, authenticate, logout, hideLogo,
+                sortedChats, activeChat, openChat, filteredMessages, newMessage, sendMessage, chatSearch,
+                showSettings, showProfile, showNewChat, showInfo, showMenu, openProfile: ()=>showProfile.value=true, openNewChatModal,
+                userProfile, editName, editStatus, saveProfile, deleteAccount, settings, saveSettings,
+                isGroupMode, newGroupName, allUsers, selectedUsers, toggleSelect, createChat,
+                formatTime, isPinned, togglePin, isBlocked, toggleBlock, clearChat, getStatusText, isOnline, openLink,
+                loadingContacts, showSearch, msgSearch, chatEmail, replyingTo, setReply, react, deleteMsg, copyText
+            };
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>
