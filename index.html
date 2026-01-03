@@ -61,10 +61,8 @@
         .sidebar-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; height: 70px; }
         .logo-area { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 700; color: white; letter-spacing: -0.5px; }
         .mini-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; }
-        
         .icon-btn { background: var(--surface); color: white; width: 40px; height: 40px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; margin-left: 8px; flex-shrink: 0; }
         .icon-btn:hover { background: var(--surface-hover); }
-        
         .search-container { padding: 0 15px 10px 15px; }
         .search-bar { background: var(--input-bg); border-radius: 12px; padding: 10px 15px; display: flex; align-items: center; color: var(--text-sec); transition: 0.2s; }
         .search-bar:focus-within { background: #333; color: white; }
@@ -88,18 +86,12 @@
         /* --- CHAT AREA --- */
         .chat-area { flex: 1; background: var(--bg-app); display: flex; flex-direction: column; position: relative; min-width: 0; }
         .chat-header { height: 70px; padding: 0 20px; background: var(--bg-sidebar); border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; z-index: 5; }
-        
         .back-btn { display: none; margin-right: 10px; background: transparent; border: none; color: white; cursor: pointer; padding: 5px; }
-        
         .in-chat-search { background: var(--input-bg); border: none; color: white; padding: 8px 14px; border-radius: 8px; margin-right: 10px; outline: none; width: 220px; font-family: inherit; transition: 0.2s; }
 
         .msg-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
         
-        .date-divider { 
-            align-self: center; margin: 20px auto; background: #222; 
-            padding: 6px 14px; border-radius: 50px; font-size: 12px; color: #BBB; font-weight: 500;
-            width: fit-content; box-shadow: 0 2px 5px rgba(0,0,0,0.1); user-select: none;
-        }
+        .date-divider { align-self: center; margin: 20px auto; background: #222; padding: 6px 14px; border-radius: 50px; font-size: 12px; color: #BBB; font-weight: 500; width: fit-content; box-shadow: 0 2px 5px rgba(0,0,0,0.1); user-select: none; }
         
         .msg-wrap { display: flex; width: 100%; margin-bottom: 2px; align-items: flex-end; position: relative; }
         .msg-wrap.me { flex-direction: row-reverse; } 
@@ -150,7 +142,9 @@
         .check-icon { margin-left: auto; color: var(--primary); }
 
         .btn-delete { background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid var(--danger); margin-top: 20px; width: 100%; padding: 12px; border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-delete:hover { background: rgba(255, 69, 58, 0.2); }
         .btn-logout { background: transparent; color: white; border: 1px solid #444; margin-top: 10px; width: 100%; padding: 12px; border-radius: 50px; cursor: pointer; transition: 0.2s; }
+        .btn-logout:hover { border-color: white; background: rgba(255,255,255,0.05); }
         .setting-row { display: flex; align-items: center; padding: 16px; border-bottom: 1px solid #222; cursor: pointer; justify-content: space-between; transition: 0.2s; }
         .setting-row:hover { background: #1E1E1E; }
 
@@ -165,25 +159,19 @@
         @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* --- MOBILE RESPONSIVE --- */
+        /* --- MOBILE RESPONSIVE LOGIC --- */
         @media (max-width: 768px) {
-            .sidebar { width: 100%; border-right: none; }
-            .chat-area { width: 100%; }
+            .sidebar { width: 100%; border-right: none; display: flex !important; }
+            .chat-area { width: 100%; display: none !important; }
             
-            /* Toggle Views Logic */
-            #app.chat-active .sidebar { display: none; }
-            #app.chat-active .chat-area { display: flex; }
-            
-            #app:not(.chat-active) .chat-area { display: none; }
-            #app:not(.chat-active) .sidebar { display: flex; }
+            /* Toggle Views Logic: IMPORTANT ensures visibility flip */
+            #app.chat-active .sidebar { display: none !important; }
+            #app.chat-active .chat-area { display: flex !important; }
 
-            /* Back Button */
             .back-btn { display: block; }
-            
-            /* Adjustments */
             .in-chat-search { width: 140px; }
             .bubble-group { max-width: 80%; }
-            .msg-actions { opacity: 1; } /* Always show actions on mobile since no hover */
+            .msg-actions { opacity: 1; } 
         }
     </style>
 </head>
@@ -296,7 +284,6 @@
                         <div class="date-divider">{{ group.date }}</div>
                         
                         <div v-for="msg in group.msgs" :key="msg.id" class="msg-wrap" :class="msg.senderId === user.uid ? 'me' : 'them'">
-                            
                             <div class="msg-actions" v-if="!isBlocked">
                                 <template v-if="msg.senderId !== user.uid">
                                     <button class="action-btn" @click="react(msg.id, '❤️')">❤️</button>
@@ -311,22 +298,15 @@
 
                             <div class="bubble-group">
                                 <div class="bubble">
-                                    <div v-if="activeChat.type === 'group' && msg.senderId !== user.uid" class="sender-name">
-                                        {{ getSenderName(msg.senderId) }}
-                                    </div>
-
+                                    <div v-if="activeChat.type === 'group' && msg.senderId !== user.uid" class="sender-name">{{ getSenderName(msg.senderId) }}</div>
                                     <div v-if="msg.replyToId" class="reply-context">
                                         <div class="reply-name">{{ msg.replyToName }}</div>
                                         <div style="opacity:0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ msg.replyToText }}</div>
                                     </div>
-
                                     <div style="white-space: pre-wrap;">{{ msg.text }}</div>
                                     <div class="msg-time">
                                         {{ formatTime(msg.timestamp) }}
-                                        <span v-if="msg.senderId === user.uid" class="material-icons-round tick-icon" 
-                                              :class="msg.read ? 'tick-read' : 'tick-sent'" style="margin-left: 4px;">
-                                            {{ msg.read ? 'done_all' : 'done' }}
-                                        </span>
+                                        <span v-if="msg.senderId === user.uid" class="material-icons-round tick-icon" :class="msg.read ? 'tick-read' : 'tick-sent'" style="margin-left: 4px;">{{ msg.read ? 'done_all' : 'done' }}</span>
                                     </div>
                                     <div v-if="msg.reaction" class="reaction-badge">{{ msg.reaction }}</div>
                                 </div>
@@ -342,7 +322,6 @@
                             <div style="color: #AAA; font-size: 13px;">Replying to <strong style="color:var(--primary)">{{ replyingTo.senderName }}</strong></div>
                             <span class="material-icons-round" style="cursor:pointer;" @click="replyingTo = null">close</span>
                         </div>
-
                         <div class="input-area">
                             <textarea v-model="newMessage" class="msg-input" placeholder="Message..." @keyup.enter.exact="sendMessage"></textarea>
                             <button class="send-btn" @click="sendMessage"><span class="material-icons-round">send</span></button>
@@ -481,7 +460,7 @@
             const otherUserPresence = ref({});
             const chatEmail = ref("");
             const replyingTo = ref(null);
-            const lastMessages = ref({}); // Store previews here
+            const lastMessages = ref({}); 
 
             const showSettings = ref(false), showProfile = ref(false), showNewChat = ref(false), showInfo = ref(false), showMenu = ref(false), showSearch = ref(false);
             const isGroupMode = ref(false), newGroupName = ref(""), selectedUsers = ref([]);
@@ -546,7 +525,6 @@
                                 if(id !== uid) name = pname;
                             }
                         }
-                        // Listen for last message
                         const lastMsgQ = query(collection(db, "chats", d.id, "messages"), orderBy("timestamp", "desc"), limit(1));
                         onSnapshot(lastMsgQ, (msgSnap) => {
                             if (!msgSnap.empty) {
