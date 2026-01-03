@@ -751,63 +751,76 @@
             }
         }
 
-        /* --- MOBILE RESPONSIVE LOGIC (UPDATED) --- */
+        /* --- MOBILE RESPONSIVE LOGIC --- */
         @media (max-width: 768px) {
             /*
-             * On small screens, we treat the sidebar and chat area as panels
-             * that slide horizontally.  Initially, the sidebar is visible and
-             * the chat area sits offscreen to the right.  When the user
-             * selects a chat, the root element gains the `chat-active` class
-             * and the panels slide: the sidebar moves to the left and the
-             * chat area moves in.  This avoids issues where the chat
-             * component is present but overlapped by the sidebar due to
-             * z-index layering.
+             * For handheld devices we want the sidebar to occupy the full
+             * viewport width while the chat view is hidden until a chat is
+             * selected.  Avoiding sliding transforms ensures consistent
+             * behaviour across all modern mobile browsers on Android and
+             * iOS.  When the `chat-active` class is applied to the root,
+             * we simply hide the sidebar and raise the z‑index of the chat
+             * area so that it becomes visible.  Because both panels are set
+             * to `position: absolute` they overlap each other, and toggling
+             * `display` is sufficient to swap them.
              */
-            .sidebar,
-            .chat-area {
+            .sidebar {
+                width: 100%;
                 position: absolute;
                 top: 0;
                 left: 0;
-                width: 100%;
                 height: 100%;
-                will-change: transform;
-                transition: transform 0.3s ease;
-            }
-            .sidebar {
                 z-index: 20;
-                transform: translateX(0);
+                display: flex;
+                flex-direction: column;
+                overflow-y: auto;
             }
             .chat-area {
+                width: 100%;
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
                 z-index: 10;
-                transform: translateX(100%);
+                display: flex;
+                flex-direction: column;
+                background: var(--bg-app);
             }
-            /* When a chat is active, slide the sidebar out of view and bring
-             * the chat area to the front. */
+            /* When a chat is active, hide the sidebar and bring the chat
+             * area to the front.  Using `display: none` avoids issues
+             * where overlayed panels can still intercept taps on mobile
+             * browsers. */
             #app.chat-active .sidebar {
-                transform: translateX(-100%);
+                display: none !important;
             }
             #app.chat-active .chat-area {
-                transform: translateX(0);
                 z-index: 30;
             }
+            /* Show the back button to allow returning to the chat list. */
             .back-btn {
                 display: block;
             }
+            /* Narrow the in-chat search bar to better fit small screens. */
             .in-chat-search {
                 width: 140px;
             }
+            /* Increase message bubble width slightly on small screens. */
             .bubble-group {
                 max-width: 80%;
             }
+            /* Always show message actions on mobile since hover isn't
+             * available. */
             .msg-actions {
                 opacity: 1;
             }
-            /* Ensure the floating action button stays within the viewport on
-             * mobile devices.  Using `fixed` means the button is positioned
-             * relative to the viewport rather than the scrollable panel. */
+            /* Position the floating action button relative to the viewport
+             * rather than the sidebar.  Use the `env()` fallback with a
+             * default of 0 for safe‑area insets on iOS; browsers that do
+             * not support `env()` simply ignore the first value and use
+             * the fallback. */
             .fab {
                 position: fixed;
-                bottom: 20px;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
                 right: 20px;
                 border-radius: 18px;
                 width: 56px;
@@ -817,7 +830,13 @@
     </style>
 </head>
 <body>
-    <div id="app" :class="{ 'chat-active': activeChat }">
+    <!--
+      Use double-negation (!!) to coerce the reactive `activeChat` value into a
+      boolean for the `chat-active` class.  Vue treats an empty object as
+      truthy, but explicitly converting to a boolean improves clarity and
+      ensures the class toggles correctly on all devices.
+    -->
+    <div id="app" :class="{ 'chat-active': !!activeChat }">
         <!-- Authentication screen -->
         <div v-if="!user" class="auth-wrapper">
             <div class="auth-form">
