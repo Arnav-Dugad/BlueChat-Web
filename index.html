@@ -23,6 +23,7 @@
             --danger: #FF453A;
             --online: #00E676;
             --tick-read: #4FC3F7;
+            --sender-name: #FF9800; /* Orange for group senders */
         }
 
         * { box-sizing: border-box; }
@@ -64,6 +65,7 @@
         
         .avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; margin-right: 15px; position: relative; color: white; flex-shrink: 0; }
         .avatar.group { background: #5E35B1; }
+        .avatar.small { width: 32px; height: 32px; font-size: 14px; margin-right: 10px; }
         .online-dot { width: 14px; height: 14px; background: var(--online); border: 2px solid var(--bg-sidebar); border-radius: 50%; position: absolute; bottom: 0; right: 0; }
 
         .fab { position: absolute; bottom: 20px; right: 20px; width: 56px; height: 56px; background: var(--primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(0,112,209,0.4); cursor: pointer; border: none; transition: 0.2s; z-index: 10; }
@@ -76,7 +78,7 @@
 
         .msg-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
         
-        /* DATE PILL */
+        /* DATE PILL (CENTERED) */
         .date-divider { 
             align-self: center; 
             margin: 20px auto; 
@@ -106,23 +108,18 @@
         }
         .msg-wrap:hover .msg-actions { opacity: 1; }
         
-        .action-btn { 
-            width: 28px; height: 28px; 
-            border-radius: 50%; 
-            background: #333; 
-            color: #FFF; 
-            border: none; 
-            display: flex; align-items: center; justify-content: center; 
-            cursor: pointer; font-size: 14px;
-        }
+        .action-btn { width: 28px; height: 28px; border-radius: 50%; background: #333; color: #FFF; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
         .action-btn:hover { background: var(--primary); }
 
         /* BUBBLE */
         .bubble-group { display: flex; flex-direction: column; max-width: 65%; }
-        .bubble { padding: 8px 14px; border-radius: 18px; font-size: 15px; line-height: 1.5; position: relative; width: 100%; }
+        .bubble { padding: 8px 14px; border-radius: 18px; font-size: 15px; line-height: 1.5; position: relative; width: 100%; min-width: 100px; }
         .me .bubble { background: var(--bubble-me); color: white; border-bottom-right-radius: 4px; }
         .them .bubble { background: var(--bubble-them); color: white; border-bottom-left-radius: 4px; }
         
+        /* GROUP SENDER NAME */
+        .sender-name { font-size: 12px; font-weight: bold; color: var(--sender-name); margin-bottom: 2px; }
+
         /* REPLY PREVIEW INSIDE BUBBLE */
         .reply-context {
             background: rgba(0,0,0,0.2);
@@ -136,16 +133,7 @@
         .reply-name { font-weight: bold; color: var(--tick-read); font-size: 11px; margin-bottom: 2px; }
 
         /* REACTION BADGE */
-        .reaction-badge {
-            position: absolute;
-            bottom: -10px;
-            background: var(--surface);
-            border: 2px solid var(--bg-app);
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 12px;
-            z-index: 2;
-        }
+        .reaction-badge { position: absolute; bottom: -10px; background: var(--surface); border: 2px solid var(--bg-app); padding: 2px 6px; border-radius: 10px; font-size: 12px; z-index: 2; }
         .me .reaction-badge { left: -5px; }
         .them .reaction-badge { right: -5px; }
 
@@ -157,16 +145,7 @@
         /* INPUT AREA */
         .input-wrapper { background: var(--bg-sidebar); padding: 10px 15px; }
         
-        .reply-bar { 
-            background: #1F1F1F; 
-            padding: 8px 15px; 
-            border-radius: 12px 12px 0 0; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            border-left: 4px solid var(--primary);
-            margin-bottom: 5px;
-        }
+        .reply-bar { background: #1F1F1F; padding: 8px 15px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary); margin-bottom: 5px; }
 
         .input-area { display: flex; align-items: flex-end; gap: 10px; }
         .msg-input { flex: 1; background: var(--input-bg); border-radius: 24px; padding: 12px 20px; border: none; color: white; outline: none; resize: none; min-height: 48px; max-height: 120px; font-family: inherit; }
@@ -305,6 +284,10 @@
 
                             <div class="bubble-group">
                                 <div class="bubble">
+                                    <div v-if="activeChat.type === 'group' && msg.senderId !== user.uid" class="sender-name">
+                                        {{ getSenderName(msg.senderId) }}
+                                    </div>
+
                                     <div v-if="msg.replyToId" class="reply-context">
                                         <div class="reply-name">{{ msg.replyToName }}</div>
                                         <div style="opacity:0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ msg.replyToText }}</div>
@@ -379,22 +362,14 @@
             <div class="modal-header"><span class="material-icons-round" @click="showSettings = false" style="cursor: pointer;">arrow_back</span> Settings</div>
             <div class="modal-content">
                 <div style="color: var(--primary); font-weight: bold; margin-bottom: 10px;">Preferences</div>
-                
-                <div class="setting-row">
-                    <div>Read Receipts</div>
-                    <label class="switch">
-                        <input type="checkbox" v-model="settings.readReceipts" @change="saveSettings">
-                        <span class="slider"></span>
-                    </label>
-                </div>
                 <div class="setting-row">
                     <div>Notifications</div>
-                    <label class="switch">
-                        <input type="checkbox" v-model="settings.notifications" @change="saveSettings">
-                        <span class="slider"></span>
-                    </label>
+                    <label class="switch"><input type="checkbox" v-model="settings.notifications" @change="saveSettings"><span class="slider"></span></label>
                 </div>
-
+                <div class="setting-row">
+                    <div>Read Receipts</div>
+                    <label class="switch"><input type="checkbox" v-model="settings.readReceipts" @change="saveSettings"><span class="slider"></span></label>
+                </div>
                 <div style="color: var(--primary); font-weight: bold; margin: 20px 0 10px 0;">Help</div>
                 <div class="setting-row" @click="openLink('https://arnav-dugad.github.io/BlueChat-Help-Center/')"><div>Help Center</div><span class="material-icons-round" style="margin-left: auto; color: #555;">chevron_right</span></div>
                 <div class="setting-row" @click="openLink('https://arnav-dugad.github.io/BlueChat-Terms-Policy/#data-usage')"><div>Terms & Policy</div><span class="material-icons-round" style="margin-left: auto; color: #555;">chevron_right</span></div>
@@ -428,7 +403,18 @@
                     <p style="color: var(--text-sec);">{{ activeChat.type === 'group' ? 'Group Chat' : 'Private Contact' }}</p>
                     <p v-if="activeChat.type === 'private' && chatEmail" style="color: #666; font-size: 13px; margin-top: 5px;">Email: {{ chatEmail }}</p>
                 </div>
-                <button class="app-btn" @click="showInfo = false">Close</button>
+                
+                <div v-if="activeChat.type === 'group'" style="text-align: left;">
+                    <div style="font-weight: bold; margin-bottom: 10px; color: var(--primary);">Members</div>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <div v-for="(name, uid) in activeChat.participantNames" :key="uid" style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #222;">
+                            <div class="avatar small">{{ name[0] }}</div>
+                            <div>{{ name }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="app-btn" @click="showInfo = false" style="margin-top: 15px;">Close</button>
             </div>
         </div>
     </div>
@@ -504,7 +490,6 @@
                         userProfile.value = d.data();
                         editName.value = d.data().name;
                         editStatus.value = d.data().status;
-                        // Load Settings (Default to true if missing)
                         settings.value.readReceipts = d.data().readReceipts ?? true;
                         settings.value.notifications = d.data().notifications ?? true;
                     }
@@ -556,7 +541,6 @@
                 onSnapshot(q, (snap) => {
                     messages.value = snap.docs.map(d => {
                         const m = d.data();
-                        // Mark read if I am recipient AND I have read receipts enabled
                         if(m.senderId !== user.value.uid && !m.read && settings.value.readReceipts) {
                             updateDoc(d.ref, { read: true });
                         }
@@ -735,6 +719,9 @@
                 const other = chat.participants.find(p => p!==user.value.uid);
                 return otherUserPresence.value[other]?.isOnline;
             };
+            const getSenderName = (uid) => {
+                return activeChat.value.participantNames[uid] || "Unknown";
+            };
 
             return {
                 user, isLogin, authName, authEmail, authPassword, authenticate, logout, hideLogo,
@@ -743,7 +730,7 @@
                 userProfile, editName, editStatus, saveProfile, deleteAccount, settings, saveSettings,
                 isGroupMode, newGroupName, allUsers, selectedUsers, toggleSelect, createChat,
                 formatTime, isPinned, togglePin, isBlocked, toggleBlock, clearChat, getStatusText, isOnline, openLink,
-                loadingContacts, showSearch, msgSearch, chatEmail, replyingTo, setReply, react, deleteMsg, copyText
+                loadingContacts, showSearch, msgSearch, chatEmail, replyingTo, setReply, react, deleteMsg, copyText, getSenderName
             };
         }
     }).mount('#app');
