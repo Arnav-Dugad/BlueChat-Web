@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>BlueChat Web</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,10 +42,10 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
-        #app { display: flex; width: 100%; height: 100%; }
+        #app { display: flex; width: 100%; height: 100%; position: relative; }
 
         /* --- LOGIN --- */
-        .auth-wrapper { width: 100%; display: flex; align-items: center; justify-content: center; background: #000; animation: fadeIn 0.5s ease; padding: 20px; }
+        .auth-wrapper { width: 100%; display: flex; align-items: center; justify-content: center; background: #000; animation: fadeIn 0.5s ease; padding: 20px; position: absolute; z-index: 200; height: 100%; }
         .auth-form { width: 100%; max-width: 360px; text-align: center; }
         .auth-logo { width: 100px; height: 100px; border-radius: 22px; object-fit: cover; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0, 112, 209, 0.2); }
         .auth-title { font-size: 32px; font-weight: 800; color: var(--primary); margin-bottom: 8px; letter-spacing: -0.5px; }
@@ -57,22 +57,23 @@
         .app-btn:active { transform: scale(0.98); }
 
         /* --- SIDEBAR --- */
-        .sidebar { width: 380px; background: var(--bg-sidebar); border-right: 1px solid #222; display: flex; flex-direction: column; position: relative; z-index: 10; flex-shrink: 0; }
-        .sidebar-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; height: 70px; }
+        .sidebar { width: 380px; background: var(--bg-sidebar); border-right: 1px solid #222; display: flex; flex-direction: column; position: relative; z-index: 10; flex-shrink: 0; height: 100%; }
+        .sidebar-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; height: 70px; flex-shrink: 0; }
         .logo-area { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 700; color: white; letter-spacing: -0.5px; }
         .mini-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; }
+        
         .icon-btn { background: var(--surface); color: white; width: 40px; height: 40px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; margin-left: 8px; flex-shrink: 0; }
         .icon-btn:hover { background: var(--surface-hover); }
-        .search-container { padding: 0 15px 10px 15px; }
+        
+        .search-container { padding: 0 15px 10px 15px; flex-shrink: 0; }
         .search-bar { background: var(--input-bg); border-radius: 12px; padding: 10px 15px; display: flex; align-items: center; color: var(--text-sec); transition: 0.2s; }
-        .search-bar:focus-within { background: #333; color: white; }
         .search-bar input { background: transparent; border: none; color: white; margin-left: 10px; width: 100%; outline: none; font-size: 15px; font-family: inherit; }
         
         .chat-list { flex: 1; overflow-y: auto; padding: 10px; }
         .chat-row { display: flex; align-items: center; padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 2px; transition: 0.2s; }
         .chat-row:hover { background: #111; }
         .chat-row.active { background: var(--surface); }
-        .chat-separator { border-bottom: 1px solid #222; margin: 5px 15px 10px 15px; }
+        .chat-separator { border-bottom: 1px solid #222; margin: 5px 15px 10px 15px; flex-shrink: 0; }
 
         .avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; margin-right: 15px; position: relative; color: white; flex-shrink: 0; }
         .avatar.group { background: #5E35B1; }
@@ -80,12 +81,24 @@
         .avatar.small { width: 36px; height: 36px; font-size: 14px; margin-right: 12px; }
         .online-dot { width: 14px; height: 14px; background: var(--online); border: 2px solid var(--bg-sidebar); border-radius: 50%; position: absolute; bottom: 0; right: 0; box-shadow: 0 0 0 1px #000; }
         
-        .fab { position: absolute; bottom: 25px; right: 25px; width: 56px; height: 56px; background: var(--primary); border-radius: 18px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 15px rgba(0,112,209,0.4); cursor: pointer; border: none; transition: 0.2s; z-index: 10; }
+        /* FAB FIX: Safe Area + Margin adjustments */
+        .fab { 
+            position: absolute; 
+            bottom: calc(20px + env(safe-area-inset-bottom)); 
+            right: 20px; 
+            width: 56px; height: 56px; 
+            background: var(--primary); 
+            border-radius: 18px; 
+            display: flex; align-items: center; justify-content: center; 
+            color: white; 
+            box-shadow: 0 4px 15px rgba(0,112,209,0.4); 
+            cursor: pointer; border: none; transition: 0.2s; z-index: 50; 
+        }
         .fab:hover { transform: scale(1.05); background: var(--primary-hover); }
 
         /* --- CHAT AREA --- */
-        .chat-area { flex: 1; background: var(--bg-app); display: flex; flex-direction: column; position: relative; min-width: 0; }
-        .chat-header { height: 70px; padding: 0 20px; background: var(--bg-sidebar); border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; z-index: 5; }
+        .chat-area { flex: 1; background: var(--bg-app); display: flex; flex-direction: column; position: relative; min-width: 0; height: 100%; }
+        .chat-header { height: 70px; padding: 0 20px; background: var(--bg-sidebar); border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; z-index: 5; flex-shrink: 0; }
         .back-btn { display: none; margin-right: 10px; background: transparent; border: none; color: white; cursor: pointer; padding: 5px; }
         .in-chat-search { background: var(--input-bg); border: none; color: white; padding: 8px 14px; border-radius: 8px; margin-right: 10px; outline: none; width: 220px; font-family: inherit; transition: 0.2s; }
 
@@ -119,7 +132,7 @@
         .tick-read { color: var(--tick-read); }
         .tick-sent { color: rgba(255,255,255,0.6); }
 
-        .input-wrapper { background: var(--bg-sidebar); padding: 15px 20px; }
+        .input-wrapper { background: var(--bg-sidebar); padding: 15px 20px; flex-shrink: 0; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
         .reply-bar { background: #1F1F1F; padding: 10px 15px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary); margin-bottom: 5px; animation: slideUp 0.2s; }
         .input-area { display: flex; align-items: flex-end; gap: 10px; }
         .msg-input { flex: 1; background: var(--input-bg); border-radius: 24px; padding: 14px 20px; border: none; color: white; outline: none; resize: none; min-height: 50px; max-height: 140px; font-family: inherit; font-size: 15px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
@@ -127,8 +140,8 @@
         .send-btn:hover { background: var(--primary-hover); transform: scale(1.05); }
 
         /* --- MODALS --- */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; animation: fadeIn 0.2s; }
-        .modal-card { background: #161616; width: 420px; border-radius: 20px; border: 1px solid #333; overflow: hidden; display: flex; flex-direction: column; max-height: 85vh; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: scaleIn 0.2s; margin: 20px; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; animation: fadeIn 0.2s; padding: 20px; }
+        .modal-card { background: #161616; width: 100%; max-width: 420px; border-radius: 20px; border: 1px solid #333; overflow: hidden; display: flex; flex-direction: column; max-height: 85vh; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: scaleIn 0.2s; }
         .modal-header { padding: 18px 20px; background: #1E1E1E; font-weight: 700; display: flex; align-items: center; gap: 15px; font-size: 18px; border-bottom: 1px solid #222; }
         .modal-content { padding: 20px; overflow-y: auto; }
 
@@ -159,19 +172,36 @@
         @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* --- MOBILE RESPONSIVE LOGIC --- */
+        /* --- MOBILE RESPONSIVE LOGIC (FIXED) --- */
         @media (max-width: 768px) {
-            .sidebar { width: 100%; border-right: none; display: flex !important; }
-            .chat-area { width: 100%; display: none !important; }
+            .sidebar { 
+                width: 100%; 
+                position: absolute; /* Force overlay logic */
+                top: 0; left: 0; height: 100%; 
+                z-index: 20; 
+                display: flex !important; 
+            }
             
-            /* Toggle Views Logic: IMPORTANT ensures visibility flip */
+            .chat-area { 
+                width: 100%; 
+                position: absolute; 
+                top: 0; left: 0; height: 100%; 
+                z-index: 10; /* Hidden behind sidebar by default */
+                display: flex !important; /* Always technically there */
+                background: var(--bg-app);
+            }
+            
+            /* WHEN CHAT IS ACTIVE */
+            /* Hide sidebar, bring chat to front */
             #app.chat-active .sidebar { display: none !important; }
-            #app.chat-active .chat-area { display: flex !important; }
+            #app.chat-active .chat-area { z-index: 30; }
 
             .back-btn { display: block; }
             .in-chat-search { width: 140px; }
             .bubble-group { max-width: 80%; }
             .msg-actions { opacity: 1; } 
+            
+            .fab { bottom: calc(20px + env(safe-area-inset-bottom)); right: 20px; } /* Ensure FAB respects safe area */
         }
     </style>
 </head>
@@ -194,7 +224,7 @@
         </div>
     </div>
 
-    <div v-else style="display: flex; width: 100%;">
+    <div v-else style="display: flex; width: 100%; height: 100%; position: relative;">
         
         <div class="sidebar">
             <div class="sidebar-header">
@@ -231,7 +261,7 @@
                         {{ chat.name.charAt(0).toUpperCase() }}
                         <div v-if="isOnline(chat)" class="online-dot"></div>
                     </div>
-                    <div style="flex: 1;">
+                    <div style="flex: 1; overflow: hidden;">
                         <div style="font-weight: 600; font-size: 16px;">{{ chat.name }}</div>
                         <div style="font-size: 13px; color: var(--text-sec); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             {{ getPreviewText(chat) }}
@@ -267,7 +297,7 @@
                     </div>
                     
                     <div style="display: flex; align-items: center;">
-                        <input v-if="showSearch" v-model="msgSearch" class="in-chat-search" placeholder="Find in chat...">
+                        <input v-if="showSearch" v-model="msgSearch" class="in-chat-search" placeholder="Find...">
                         <button class="icon-btn" @click="showSearch = !showSearch"><span class="material-icons-round">{{ showSearch ? 'close' : 'search' }}</span></button>
                         <button class="icon-btn" @click="showMenu = !showMenu"><span class="material-icons-round">more_vert</span></button>
                     </div>
@@ -298,15 +328,22 @@
 
                             <div class="bubble-group">
                                 <div class="bubble">
-                                    <div v-if="activeChat.type === 'group' && msg.senderId !== user.uid" class="sender-name">{{ getSenderName(msg.senderId) }}</div>
+                                    <div v-if="activeChat.type === 'group' && msg.senderId !== user.uid" class="sender-name">
+                                        {{ getSenderName(msg.senderId) }}
+                                    </div>
+
                                     <div v-if="msg.replyToId" class="reply-context">
                                         <div class="reply-name">{{ msg.replyToName }}</div>
                                         <div style="opacity:0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ msg.replyToText }}</div>
                                     </div>
+
                                     <div style="white-space: pre-wrap;">{{ msg.text }}</div>
                                     <div class="msg-time">
                                         {{ formatTime(msg.timestamp) }}
-                                        <span v-if="msg.senderId === user.uid" class="material-icons-round tick-icon" :class="msg.read ? 'tick-read' : 'tick-sent'" style="margin-left: 4px;">{{ msg.read ? 'done_all' : 'done' }}</span>
+                                        <span v-if="msg.senderId === user.uid" class="material-icons-round tick-icon" 
+                                              :class="msg.read ? 'tick-read' : 'tick-sent'" style="margin-left: 4px;">
+                                            {{ msg.read ? 'done_all' : 'done' }}
+                                        </span>
                                     </div>
                                     <div v-if="msg.reaction" class="reaction-badge">{{ msg.reaction }}</div>
                                 </div>
@@ -322,6 +359,7 @@
                             <div style="color: #AAA; font-size: 13px;">Replying to <strong style="color:var(--primary)">{{ replyingTo.senderName }}</strong></div>
                             <span class="material-icons-round" style="cursor:pointer;" @click="replyingTo = null">close</span>
                         </div>
+
                         <div class="input-area">
                             <textarea v-model="newMessage" class="msg-input" placeholder="Message..." @keyup.enter.exact="sendMessage"></textarea>
                             <button class="send-btn" @click="sendMessage"><span class="material-icons-round">send</span></button>
