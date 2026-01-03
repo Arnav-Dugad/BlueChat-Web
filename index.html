@@ -26,6 +26,7 @@
             --online: #00E676;
             --tick-read: #4FC3F7;
             --group-sender: #FF9F0A;
+            --global-chat: #3F51B5;
         }
 
         * { box-sizing: border-box; }
@@ -61,12 +62,16 @@
         .search-bar { background: var(--input-bg); border-radius: 12px; padding: 10px 15px; display: flex; align-items: center; color: var(--text-sec); transition: 0.2s; }
         .search-bar:focus-within { background: #333; color: white; }
         .search-bar input { background: transparent; border: none; color: white; margin-left: 10px; width: 100%; outline: none; font-size: 15px; font-family: inherit; }
+        
         .chat-list { flex: 1; overflow-y: auto; padding: 10px; }
         .chat-row { display: flex; align-items: center; padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 2px; transition: 0.2s; }
         .chat-row:hover { background: #111; }
         .chat-row.active { background: var(--surface); }
+        .chat-separator { border-bottom: 1px solid #222; margin: 5px 15px 10px 15px; }
+
         .avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; margin-right: 15px; position: relative; color: white; flex-shrink: 0; }
         .avatar.group { background: #5E35B1; }
+        .avatar.global { background: var(--global-chat); }
         .avatar.small { width: 36px; height: 36px; font-size: 14px; margin-right: 12px; }
         .online-dot { width: 14px; height: 14px; background: var(--online); border: 2px solid var(--bg-sidebar); border-radius: 50%; position: absolute; bottom: 0; right: 0; box-shadow: 0 0 0 1px #000; }
         .fab { position: absolute; bottom: 25px; right: 25px; width: 56px; height: 56px; background: var(--primary); border-radius: 18px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 15px rgba(0,112,209,0.4); cursor: pointer; border: none; transition: 0.2s; z-index: 10; }
@@ -76,6 +81,8 @@
         .chat-area { flex: 1; background: var(--bg-app); display: flex; flex-direction: column; position: relative; }
         .chat-header { height: 75px; padding: 0 25px; background: var(--bg-sidebar); border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; z-index: 5; }
         .in-chat-search { background: var(--input-bg); border: none; color: white; padding: 8px 14px; border-radius: 8px; margin-right: 10px; outline: none; width: 220px; font-family: inherit; transition: 0.2s; }
+        .in-chat-search:focus { background: #333; }
+
         .msg-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
         
         .date-divider { 
@@ -123,13 +130,8 @@
         .modal-header { padding: 18px 20px; background: #1E1E1E; font-weight: 700; display: flex; align-items: center; gap: 15px; font-size: 18px; border-bottom: 1px solid #222; }
         .modal-content { padding: 20px; overflow-y: auto; }
 
-        /* FIXED TAB BUTTONS FOR GROUP/CONTACT */
         .tab-wrapper { display: flex; gap: 10px; margin-bottom: 20px; background: #222; padding: 5px; border-radius: 12px; }
-        .tab-item { 
-            flex: 1; text-align: center; padding: 10px; border-radius: 8px; 
-            cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s; 
-            color: #888; user-select: none;
-        }
+        .tab-item { flex: 1; text-align: center; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s; color: #888; user-select: none; }
         .tab-item.active { background: var(--surface-hover); color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
         .contact-row { display: flex; align-items: center; padding: 12px; border-radius: 12px; cursor: pointer; transition: 0.2s; }
@@ -197,6 +199,16 @@
             </div>
 
             <div class="chat-list">
+                <div v-if="globalChat" class="chat-row" :class="{ active: activeChat?.id === globalChat.id }" @click="openChat(globalChat)">
+                    <div class="avatar global">{{ globalChat.name.charAt(0) }}</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 16px;">{{ globalChat.name }}</div>
+                        <div style="font-size: 13px; color: var(--text-sec); margin-top: 3px;">Tap to open group</div>
+                    </div>
+                </div>
+                
+                <div class="chat-separator"></div>
+
                 <div v-for="chat in sortedChats" :key="chat.id" class="chat-row" :class="{ active: activeChat?.id === chat.id }" @click="openChat(chat)">
                     <div class="avatar" :class="{ group: chat.type === 'group' }">
                         {{ chat.name.charAt(0).toUpperCase() }}
@@ -217,7 +229,7 @@
             <div v-if="activeChat" style="display: flex; flex-direction: column; height: 100%;">
                 <div class="chat-header">
                     <div style="display: flex; align-items: center; cursor: pointer;" @click="showInfo = true">
-                        <div class="avatar" style="width: 42px; height: 42px; font-size: 17px; margin-right: 14px;" :class="{ group: activeChat.type === 'group' }">
+                        <div class="avatar" style="width: 42px; height: 42px; font-size: 17px; margin-right: 14px;" :class="{ group: activeChat.type === 'group', global: activeChat.id === 'global_demo' }">
                             {{ activeChat.name.charAt(0) }}
                         </div>
                         <div>
@@ -378,7 +390,7 @@
             <div class="modal-header">Contact Info</div>
             <div class="modal-content">
                 <div style="text-align: center; margin-bottom: 25px;">
-                    <div class="avatar" style="width: 90px; height: 90px; font-size: 36px; margin: 0 auto 15px auto;" :class="{ group: activeChat.type === 'group' }">{{ activeChat.name.charAt(0) }}</div>
+                    <div class="avatar" style="width: 90px; height: 90px; font-size: 36px; margin: 0 auto 15px auto;" :class="{ group: activeChat.type === 'group', global: activeChat.id === 'global_demo' }">{{ activeChat.name.charAt(0) }}</div>
                     <h2 style="margin: 0 0 5px 0;">{{ activeChat.name }}</h2>
                     <p style="color: var(--text-sec); margin: 0;">{{ activeChat.type === 'group' ? 'Group Chat' : 'Private Contact' }}</p>
                     <p v-if="activeChat.type === 'private' && chatEmail" style="color: #666; font-size: 14px; margin-top: 8px;">{{ chatEmail }}</p>
@@ -436,6 +448,8 @@
 
             const chats = ref([]);
             const activeChat = ref(null);
+            // FIXED GLOBAL CHAT OBJECT
+            const globalChat = ref({ id: "global_demo", name: "Global Public Chat", type: "group", participantNames: {}, participants: [] });
             const messages = ref([]);
             const newMessage = ref("");
             const chatSearch = ref("");
@@ -491,8 +505,9 @@
                 try {
                     const q = query(collection(db, "users"));
                     const snap = await getDocs(q);
-                    allUsers.value = snap.docs.map(d => d.data()).filter(u => u.uid !== user.value.uid);
-                } catch(e) { console.error(e); }
+                    // Filter unknown users
+                    allUsers.value = snap.docs.map(d => d.data()).filter(u => u.uid !== user.value.uid && u.name && u.name !== 'Unknown User');
+                } catch(e) { console.log(e); }
                 finally { loadingContacts.value = false; }
             };
 
@@ -585,7 +600,12 @@
                 } catch (e) { alert(e.message); }
             };
 
-            const logout = () => { setOnline(false); signOut(auth); };
+            const logout = async () => { 
+                await setOnline(false); 
+                await signOut(auth); 
+                // INSTANT LOGOUT
+                window.location.reload(); 
+            };
             const hideLogo = (e) => { e.target.style.display = 'none'; };
             const openProfile = () => { showProfile.value = true; };
             const openLink = (url) => window.open(url, '_blank');
@@ -712,7 +732,7 @@
                 userProfile, editName, editStatus, saveProfile, deleteAccount, settings, saveSettings,
                 isGroupMode, newGroupName, allUsers, selectedUsers, toggleSelect, createChat,
                 formatTime, isPinned, togglePin, isBlocked, toggleBlock, clearChat, getStatusText, isOnline, openLink,
-                loadingContacts, showSearch, msgSearch, chatEmail, replyingTo, setReply, react, deleteMsg, copyText, getSenderName
+                loadingContacts, showSearch, msgSearch, chatEmail, replyingTo, setReply, react, deleteMsg, copyText, getSenderName, globalChat
             };
         }
     }).mount('#app');
